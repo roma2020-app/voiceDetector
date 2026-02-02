@@ -10,7 +10,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 @Component
-public class ApiKeyFilter implements Filter {
+public class ApiKeyFilter extends OncePerRequestFilter {
 
     @Value("${api.security.key}")
     private String validApiKey;
