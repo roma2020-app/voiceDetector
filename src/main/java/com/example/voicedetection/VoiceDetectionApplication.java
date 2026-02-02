@@ -1,0 +1,2 @@
+package com.example.voicedetection; 
+import org.springframework.boot.*; import org.springframework.boot.autoconfigure.*; @SpringBootApplication public class VoiceDetectionApplication{public static void main(String[] a){SpringApplication.run(VoiceDetectionApplication.class,a);}}

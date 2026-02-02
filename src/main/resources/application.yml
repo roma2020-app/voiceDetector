@@ -1,0 +1,11 @@
+server:
+  port: 8080
+
+api:
+  security:
+     key:${API_KEY}
+# key: n7J9pE4vZx5Q8K0R2N1dCqX6HcYwM3bF4aTUp8LrS0E
+
+#onnx:
+ # model:
+  #  path: classpath:models/voice_ai_detector.onnx	
