@@ -3,8 +3,7 @@ server:
 
 api:
   security:
-     key:${API_KEY}
-# key: n7J9pE4vZx5Q8K0R2N1dCqX6HcYwM3bF4aTUp8LrS0E
+    key: ${API_KEY:dev-default-key}
 
 #onnx:
  # model:
