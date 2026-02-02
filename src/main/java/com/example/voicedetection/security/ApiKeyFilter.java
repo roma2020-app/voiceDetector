@@ -1,13 +1,15 @@
 package com.example.voicedetection.security;
 
-import java.io.IOException;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
 
-import jakarta.servlet.*;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
 
 @Component
 public class ApiKeyFilter extends OncePerRequestFilter {
@@ -16,29 +18,20 @@ public class ApiKeyFilter extends OncePerRequestFilter {
     private String validApiKey;
 
     @Override
-    public void doFilter(
-            ServletRequest request,
-            ServletResponse response,
-            FilterChain chain
-    ) throws IOException, ServletException {
+    protected void doFilterInternal(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            FilterChain filterChain
+    ) throws ServletException, IOException {
 
-        HttpServletRequest req = (HttpServletRequest) request;
-        HttpServletResponse res = (HttpServletResponse) response;
-
-        String apiKey = req.getHeader("x-api-key");
+        String apiKey = request.getHeader("X-API-KEY");
 
         if (apiKey == null || !apiKey.equals(validApiKey)) {
-            res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            res.setContentType("application/json");
-            res.getWriter().write("""
-                {
-                  "status": "error",
-                  "message": "Invalid API Key"
-                }
-                """);
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.getWriter().write("Invalid API Key");
             return;
         }
 
-        chain.doFilter(request, response);
+        filterChain.doFilter(request, response);
     }
 }
