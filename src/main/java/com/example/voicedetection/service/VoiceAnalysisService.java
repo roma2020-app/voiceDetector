@@ -26,6 +26,9 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
@@ -37,6 +40,9 @@ import javax.sound.sampled.UnsupportedAudioFileException;
 public class VoiceAnalysisService {
 	
 	private final OnnxInferenceEngine onnxInferenceEngine;
+	 private static final long MAX_AUDIO_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
+
+
 
     public VoiceAnalysisService(OnnxInferenceEngine onnxInferenceEngine) {
         this.onnxInferenceEngine = onnxInferenceEngine;
@@ -60,8 +66,14 @@ public class VoiceAnalysisService {
 
         System.out.println("Audio size (bytes): " + audioBytes.length);
         
-        
-     // MP3 → WAV using cvjar
+        // 3️⃣ Size limit check (🔥 IMPORTANT)
+        if (audioBytes.length > MAX_AUDIO_SIZE_BYTES) {
+            throw new IllegalArgumentException(
+                "Audio file size exceeds 5 MB limit"
+            );
+        }
+
+             // MP3 → WAV using cvjar
         File wavFile = convertMp3ToWavUsingJar(audioBytes);
     
 
@@ -161,21 +173,27 @@ public class VoiceAnalysisService {
 
         confidence = Math.min(confidence, 0.99f); // safety cap
         confidence = Math.max(confidence, 0.55f);
+        
+        double displayScore = BigDecimal
+                .valueOf(confidence)
+                .setScale(2, RoundingMode.HALF_UP)
+                .doubleValue();
+
 
 
         // Final decision
         boolean aiGenerated = aiProb > humanProb;
-        float margin = Math.abs(aiProb - humanProb);
-        System.out.println("margin"+margin);
+       // float margin = Math.abs(aiProb - humanProb);
+        //System.out.println("margin"+margin);
         //boolean uncertain = margin < 0.15f;
-        String classification;
-        if (confidence < 0.55f || margin < 0.15f) {
-            classification = "UNCERTAIN";
-        } else if (aiProb > humanProb) {
-            classification = "AI_GENERATED";
-        } else {
-            classification = "HUMAN";
-        }
+       // String classification;
+        //if (confidence < 0.55f || margin < 0.15f) {
+        //    classification = "UNCERTAIN";
+        //} else if (aiProb > humanProb) {
+          //  classification = "AI_GENERATED";
+       // } else {
+        //    classification = "HUMAN";
+        //}
       /*  String classification;
         if (uncertain) {
             classification = "UNCERTAIN";
@@ -193,13 +211,18 @@ public class VoiceAnalysisService {
                         : "Model detected natural human speech patterns"
         );*/
         
-        String explanation = buildNeutralExplanation(aiGenerated, confidence);
+        //String explanation = buildNeutralExplanation(aiGenerated, confidence);
 
         return new Result(
-        		//aiGenerated ? "AI_GENERATED" : "HUMAN",
-        		classification,
-                confidence,
-                explanation
+        		aiGenerated ? "AI_GENERATED" : "HUMAN",
+        		//classification,
+        				displayScore,
+                aiGenerated?"Voice produced by using AI or synthetic systems."
+                		+ " Unnatural Pitch consistency and robotic speech patterns detected."
+                		+ " Absence of natural breathing or micro-pauses. "
+                		:" Voice spoken naturaaly by a real human speaker. Micro-hesitations and emotional inflections found."
+                		+ " Human breathing patterns ,Natural pitch variation and rhythm found."	
+               // explanation
         );
 
        
@@ -309,6 +332,8 @@ public class VoiceAnalysisService {
                 try (FileOutputStream fos = new FileOutputStream(mp3File)) {
                     fos.write(mp3Bytes);
                 }
+                              
+                
 
                 // 2️⃣ Output WAV file
                  wavFile = File.createTempFile("audio_", ".wav");
